@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>brainrot</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+    <h1 class="logo">brainrot</h1>
+
+    <div class="progress-wrap" aria-label="brainrot progress">
+      <div class="progress-bg" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress-fill" id="progress"></div>
+      </div>
+      <div class="percent" id="percent">0%</div>
+    </div>
+
+    <p class="hint">*tracking head position*</p>
+  </div>
+
+  <script>
+    (function () {
+      const progress = document.getElementById('progress');
+      const percent = document.getElementById('percent');
+      const period = 4000; // milliseconds for a full 0->100->0 cycle
+      let start = performance.now();
+
+      function tick(now) {
+        const t = (now - start) % period;
+        const theta = (t / period) * Math.PI * 2; // 0..2PI
+        // Use sine wave shifted so it starts at 0 and smoothly goes to 100 and back
+        const value = (Math.sin(theta - Math.PI / 2) + 1) / 2; // 0..1
+        const pct = Math.round(value * 100);
+
+        progress.style.width = pct + '%';
+        percent.textContent = pct + '%';
+        // update ARIA
+        const bg = progress.parentElement;
+        if (bg) bg.setAttribute('aria-valuenow', pct);
+
+        requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+    })();
+  </script>
+</body>
+</html>
