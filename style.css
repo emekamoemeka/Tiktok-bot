@@ -1,7 +1,8 @@
 :root {
   --bg: #000;
-  --neon: #00e600; /* hacker green */
+  --neon: #00e600;
   --neon-2: #12c24a;
+  --danger: #ff2d2d;
   --muted: #7a7a7a;
 }
 
@@ -24,6 +25,7 @@ body {
   gap: 22px;
   padding: 40px 20px;
   text-align: center;
+  transform: translateY(-60px);
 }
 
 .logo {
@@ -35,14 +37,13 @@ body {
   display: inline-block;
 }
 
-/* make the percent counter bigger and stable width */
 .percent {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace;
   font-variant-numeric: tabular-nums;
   font-weight: 800;
-  font-size: clamp(22px, 4.5vw, 40px); /* larger */
+  font-size: clamp(22px, 4.5vw, 40px);
   color: var(--neon);
-  min-width: 4ch; /* reserve space for 100% */
+  min-width: 4ch;
   text-align: right;
 }
 
@@ -54,17 +55,74 @@ body {
   justify-content: center;
 }
 
+.label-preview {
+  width: min(900px, 94vw);
+  min-height: 320px;
+  border-radius: 18px;
+  border: 1px solid rgba(0, 230, 0, 0.12);
+  background: radial-gradient(circle at 20% 20%, rgba(0, 230, 0, 0.08), rgba(0, 0, 0, 0.8));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  padding: 32px;
+  gap: 20px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.label-preview.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.label-preview img {
+  width: min(800px, 90vw);
+  max-height: 550px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.55));
+}
+
+.label-title {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace;
+  letter-spacing: 0.28em;
+  font-size: clamp(32px, 6.4vw, 40px);
+  color: var(--neon);
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.label-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--neon);
+  font-size: clamp(32px, 7vw, 48px);
+}
+
 .progress-bg {
-  /* bar height (thicker) */
   --h: 28px;
   position: relative;
   height: var(--h);
   width: 100%;
   background: rgba(255,255,255,0.02);
   border-radius: 999px;
-  overflow: visible; /* allow the "ball" to protrude */
+  overflow: visible;
   border: 1px solid rgba(0,230,0,0.06);
   box-shadow: inset 0 2px 18px rgba(0,0,0,0.7);
+}
+
+.threshold-line {
+  position: absolute;
+  left: 80%;
+  top: -8px;
+  bottom: -8px;
+  width: 2px;
+  background: var(--danger);
+  box-shadow: 0 0 12px rgba(255, 45, 45, 0.6);
+  border-radius: 2px;
+  pointer-events: none;
 }
 
 .progress-fill {
@@ -77,14 +135,18 @@ body {
   box-shadow: 0 0 18px rgba(0,230,0,0.2), inset 0 0 10px rgba(255,255,255,0.02);
 }
 
-/* glowing circular "ball" at the leading edge that is taller than the bar */
+.progress-fill.is-danger {
+  background: linear-gradient(90deg, var(--danger), #ff6666);
+  box-shadow: 0 0 18px rgba(255, 45, 45, 0.4), inset 0 0 10px rgba(255,255,255,0.02);
+}
+
 .progress-fill::before {
   content: '';
   position: absolute;
-  right: -1px; /* sit at the edge of the fill */
+  right: -1px;
   top: 50%;
   transform: translate(50%, -50%);
-  width: calc(var(--h) * 2.0); /* taller than the bar */
+  width: calc(var(--h) * 2.0);
   height: calc(var(--h) * 2.0);
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12), var(--neon) 20%, var(--neon-2) 60%);
@@ -92,9 +154,19 @@ body {
   pointer-events: none;
 }
 
-/* keep small screens reasonable */
+.progress-fill.is-danger::before {
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12), var(--danger) 25%, #ff6666 65%);
+  box-shadow: 0 0 32px rgba(255, 45, 45, 0.5), 0 6px 18px rgba(0,0,0,0.6);
+}
+
+.percent.is-danger {
+  color: var(--danger);
+}
+
 @media (max-width: 480px) {
   .percent { font-size: clamp(18px, 6.5vw, 28px); }
   .progress-bg { --h: 20px; }
   .progress-fill::before { width: calc(var(--h) * 1.8); height: calc(var(--h) * 1.8); }
+  .label-preview { min-height: 160px; padding: 16px; }
+  .label-preview img { width: min(360px, 82vw); max-height: 200px; }
 }

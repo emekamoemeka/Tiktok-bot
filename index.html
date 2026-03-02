@@ -12,38 +12,97 @@
 
     <div class="progress-wrap" aria-label="brainrot progress">
       <div class="progress-bg" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="threshold-line" aria-hidden="true"></div>
         <div class="progress-fill" id="progress"></div>
       </div>
       <div class="percent" id="percent">0%</div>
     </div>
 
     <p class="hint">*tracking head position*</p>
+
+    <div class="label-preview" id="labelPreview" aria-live="polite">
+      <div class="label-title">MEME FOUND</div>
+      <img id="labelImage" alt="" />
+      <div class="label-text" id="labelText"></div>
+    </div>
   </div>
 
   <script>
     (function () {
       const progress = document.getElementById('progress');
       const percent = document.getElementById('percent');
-      const period = 4000; // milliseconds for a full 0->100->0 cycle
-      let start = performance.now();
+      const bg = progress.parentElement;
+      const labelPreview = document.getElementById('labelPreview');
+      const labelImage = document.getElementById('labelImage');
+      const labelText = document.getElementById('labelText');
+      const STATE_ENDPOINT = 'http://127.0.0.1:8765/state';
+      let lastPct = Number(localStorage.getItem('brainrotPercent'));
+      let lastLabel = localStorage.getItem('brainrotLabel');
+      let lastLabelImage = localStorage.getItem('brainrotLabelImage');
 
-      function tick(now) {
-        const t = (now - start) % period;
-        const theta = (t / period) * Math.PI * 2; // 0..2PI
-        // Use sine wave shifted so it starts at 0 and smoothly goes to 100 and back
-        const value = (Math.sin(theta - Math.PI / 2) + 1) / 2; // 0..1
-        const pct = Math.round(value * 100);
-
-        progress.style.width = pct + '%';
-        percent.textContent = pct + '%';
-        // update ARIA
-        const bg = progress.parentElement;
-        if (bg) bg.setAttribute('aria-valuenow', pct);
-
-        requestAnimationFrame(tick);
+      function applyValue(pct) {
+        const clamped = Math.max(0, Math.min(100, Math.round(pct)));
+        const isDanger = clamped >= 80;
+        progress.style.width = clamped + '%';
+        percent.textContent = clamped + '%';
+        if (bg) bg.setAttribute('aria-valuenow', clamped);
+        progress.classList.toggle('is-danger', isDanger);
+        percent.classList.toggle('is-danger', isDanger);
       }
 
-      requestAnimationFrame(tick);
+      function applyLabel(label, imagePath) {
+        if (!labelPreview || !labelImage || !labelText) return;
+        if (!label || !imagePath) {
+          labelPreview.classList.remove('is-visible');
+          labelImage.removeAttribute('src');
+          labelImage.setAttribute('alt', '');
+          labelText.textContent = '';
+          return;
+        }
+        if (labelImage.src !== imagePath) {
+          labelImage.src = imagePath;
+        }
+        labelImage.alt = label;
+        labelText.textContent = label.replace(/_/g, ' ');
+        labelPreview.classList.add('is-visible');
+      }
+
+      async function poll() {
+        try {
+          const res = await fetch(STATE_ENDPOINT + '?ts=' + Date.now(), { cache: 'no-store' });
+          if (!res.ok) return;
+          const data = await res.json();
+
+          if (typeof data.percent === 'number') {
+            lastPct = data.percent;
+            localStorage.setItem('brainrotPercent', String(lastPct));
+            applyValue(lastPct);
+          } else if (typeof data.value === 'number') {
+            lastPct = data.value * 100;
+            localStorage.setItem('brainrotPercent', String(lastPct));
+            applyValue(lastPct);
+          }
+
+          if (typeof data.label === 'string' && typeof data.label_image === 'string' && data.label !== lastLabel) {
+            lastLabel = data.label;
+            lastLabelImage = data.label_image;
+            localStorage.setItem('brainrotLabel', lastLabel);
+            localStorage.setItem('brainrotLabelImage', lastLabelImage);
+            applyLabel(lastLabel, lastLabelImage);
+          }
+        } catch (err) {
+          return;
+        }
+      }
+
+      if (Number.isFinite(lastPct)) {
+        applyValue(lastPct);
+      }
+      if (lastLabel && lastLabelImage) {
+        applyLabel(lastLabel, lastLabelImage);
+      }
+      poll();
+      setInterval(poll, 500);
     })();
   </script>
 </body>
